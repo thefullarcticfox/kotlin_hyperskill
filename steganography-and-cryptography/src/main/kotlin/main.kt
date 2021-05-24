@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage
 import java.io.File
 import java.io.IOException
 import javax.imageio.ImageIO
+import kotlin.experimental.xor
 
 fun setLeastSignificantBit(rgb: Int, bit: Byte): Int =
     if (bit > 0) {
@@ -25,6 +26,14 @@ fun toBitArray(byteArray: ByteArray): ByteArray {
     return bitArray
 }
 
+fun encryptMessage(msg: ByteArray, pass: ByteArray): ByteArray {
+    val encryptedBytes = ByteArray(msg.size)
+    for (i in encryptedBytes.indices) {
+        encryptedBytes[i] = msg[i] xor pass[i % pass.size]
+    }
+    return encryptedBytes
+}
+
 fun hide() {
     print("Input image file: ")
     val inputFileName = readLine()!!
@@ -32,6 +41,8 @@ fun hide() {
     val outputFileName = readLine()!!
     print("Message to hide: ")
     val messageToHide = readLine()!!.toByteArray(charset = Charsets.UTF_8)
+    print("Password: ")
+    val password = readLine()!!.toByteArray(charset = Charsets.UTF_8)
 
     try {
         val inputFile = File(inputFileName)
@@ -41,7 +52,7 @@ fun hide() {
         if (inputImage.width * inputImage.height < (messageToHide.size + 3) * 8) {
             throw Exception("The input image is not large enough to hold this message.")
         }
-        val bitArray = toBitArray(messageToHide)
+        val bitArray = toBitArray(encryptMessage(messageToHide, password))
 
         var i = 0
         for (y in 0 until inputImage.height) {
@@ -71,8 +82,10 @@ fun isEnd(byteArray: ByteArray): Boolean = byteArray.size > 2 &&
 fun show() {
     print("Input image file: ")
     val inputFileName = readLine()!!
-    var byteArray = ByteArray(0)
+    print("Password: ")
+    val password = readLine()!!.toByteArray(charset = Charsets.UTF_8)
 
+    var byteArray = ByteArray(0)
     try {
         val inputFile = File(inputFileName)
         val inputImage = ImageIO.read(inputFile)
@@ -92,9 +105,10 @@ fun show() {
                 --i
             }
         }
+        byteArray = byteArray.dropLast(3).toByteArray()
 
         println("Message:")
-        val res = byteArray.toString(Charsets.UTF_8).dropLast(3)
+        val res = encryptMessage(byteArray, password).toString(Charsets.UTF_8)
         println(res)
     } catch (e: IOException) {
         println(e.message)
