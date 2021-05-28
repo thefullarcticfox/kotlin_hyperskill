@@ -18,17 +18,16 @@ import java.lang.Exception
 class Stopwatch(private val _textView: TextView,
                 private val _runnable: Runnable,
                 private val _interval: Long) {
-    private var _running = false
-    private val _timeUpdateTask: Runnable by lazy {
-        object : Runnable {
-            override fun run() {
-                if (_running) {
-                    _runnable.run()
-                    _textView.postDelayed(this, _interval)
-                }
+    private inner class TimeUpdateRunnable : Runnable {
+        override fun run() {
+            if (_running) {
+                _runnable.run()
+                _textView.postDelayed(this, _interval)
             }
         }
     }
+    private val _timeUpdateTask = TimeUpdateRunnable()
+    private var _running = false
 
     fun start() {
         if (!_running) _textView.postDelayed(_timeUpdateTask, _interval)
@@ -50,10 +49,13 @@ class MainActivity : AppCompatActivity() {
         Color.parseColor("#4CAF50"), Color.parseColor("#CDDC39"),
         Color.parseColor("#FF6D00"), Color.parseColor("#546E7A")
     )
-    private val _timerTask = Runnable {
-        _passedSeconds++; renderSeconds()
-        runOnUiThread { renderSeconds() }
+    private inner class TimerTaskRunnable : Runnable {
+        override fun run() {
+            _passedSeconds++; renderSeconds()
+            // runOnUiThread { renderSeconds() }
+        }
     }
+    private val _timerTask = TimerTaskRunnable()
     private val _timerView: TextView by lazy {
         findViewById(R.id.textView)
     }
@@ -108,6 +110,8 @@ class MainActivity : AppCompatActivity() {
         _passedSeconds = 0
         _timerView.setTextColor(OLD_COLORS)
         renderSeconds()
+        if (_notificationManager == null) return
+        _notificationManager!!.cancelAll()
     }
 
     private fun fireNotification() {
