@@ -73,7 +73,6 @@ class MainActivity : AppCompatActivity() {
         var OLD_COLORS: ColorStateList = ColorStateList.valueOf(Color.BLACK)
     }
     private var _notificationManager: NotificationManager? = null
-    private var _notification: Notification? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -94,18 +93,6 @@ class MainActivity : AppCompatActivity() {
         // or other notification behaviors after this
         _notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         _notificationManager!!.createNotificationChannel(mChannel)
-        // Create an explicit intent for an Activity in your app
-        val intent = Intent(this, MainActivity::class.java)
-        val pendingIntent: PendingIntent =
-            PendingIntent.getActivity(applicationContext, 0, intent,
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        _notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Notification")
-            .setContentText("Time exceeded")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true).build()
     }
 
     private fun startTimer() {
@@ -123,12 +110,28 @@ class MainActivity : AppCompatActivity() {
         renderSeconds()
     }
 
+    private fun fireNotification() {
+        if (_notificationManager == null) return
+        // Create an explicit intent for an Activity in your app
+        val intent = Intent(this, MainActivity::class.java)
+        val pendingIntent: PendingIntent =
+            PendingIntent.getActivity(applicationContext, 0, intent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("Notification")
+            .setContentText("Time exceeded")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+        _notificationManager!!.notify(NOTIFICATION_ID, builder.build())
+    }
+
     private fun renderSeconds() {
-        if (_notification != null && _notificationManager != null &&
-            _passedSeconds > UPPER_LIMIT &&
+        if (_passedSeconds > UPPER_LIMIT &&
             _timerView.textColors != ColorStateList.valueOf(Color.RED)) {
             _timerView.setTextColor(ColorStateList.valueOf(Color.RED))
-            _notificationManager!!.notify(NOTIFICATION_ID, _notification!!)
+            fireNotification()
         }
         _timerView.text = String.format("%02d:%02d", _passedSeconds / 60, _passedSeconds % 60)
         _progressBar.indeterminateTintList =
