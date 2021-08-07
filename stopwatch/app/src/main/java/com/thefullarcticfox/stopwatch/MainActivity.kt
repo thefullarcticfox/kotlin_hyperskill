@@ -6,10 +6,7 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ProgressBar
-import android.widget.TextView
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.fragment.app.DialogFragment
@@ -73,6 +70,8 @@ class MainActivity : AppCompatActivity() {
         const val NOTIFICATION_ID = 424242
         var UPPER_LIMIT = Long.MAX_VALUE
         var OLD_COLORS: ColorStateList = ColorStateList.valueOf(Color.BLACK)
+        const val EXIT_DELAY = 2000
+        var back_pressed = 0L
     }
     private var _notificationManager: NotificationManager? = null
 
@@ -140,6 +139,15 @@ class MainActivity : AppCompatActivity() {
         _timerView.text = String.format("%02d:%02d", _passedSeconds / 60, _passedSeconds % 60)
         _progressBar.indeterminateTintList =
             ColorStateList.valueOf(_colors[_passedSeconds.toInt() % 10])
+    }
+
+    override fun onBackPressed() {
+        if (back_pressed + EXIT_DELAY > System.currentTimeMillis()) {
+            super.onBackPressed()
+        } else {
+            Toast.makeText(this, "Press again to exit", Toast.LENGTH_SHORT).show()
+            back_pressed = System.currentTimeMillis()
+        }
     }
 
     class SettingsDialogFragment : DialogFragment() {
